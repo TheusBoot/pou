@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pou - Mascote Virtual</title>
+<style>
+/* ═══════════════════════════════════════
+   RESET E BASE
+   ═══════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+:root{
+  --pou-body:#8B4513;--pou-shadow:#6B3410;--pou-highlight:#A0522D;
+  --ui-coral:#FF6B6B;--ui-turquoise:#4ECDC4;
+  --bar-hunger:#4CAF50;--bar-happy:#FFC107;--bar-hygiene:#2196F3;--bar-energy:#9C27B0;
+  --coin-gold:#FFD700;
+  --bg-day-top:#87CEEB;--bg-day-bot:#B0E0E6;
+  --bg-night-top:#1a1a2e;--bg-night-bot:#16213e;
+}
+html,body{height:100%;overflow:hidden;font-family:'Nunito',sans-serif;background:#111}
+
+/* ═══════════════════════════════════════
+   CONTAINER PRINCIPAL
+   ═══════════════════════════════════════ */
+#game{
+  position:relative;width:100%;max-width:540px;height:100vh;max-height:960px;
+  margin:0 auto;overflow:hidden;
+  background:linear-gradient(180deg,var(--bg-day-top),var(--bg-day-bot));
+  transition:background 1s ease;
+  touch-action:manipulation;
+}
+
+/* ═══════════════════════════════════════
+   BARRA SUPERIOR DE STATUS
+   ═══════════════════════════════════════ */
+#top-bar{
+  position:absolute;top:0;left:0;right:0;z-index:50;
+  padding:8px 12px 6px;
+  background:rgba(0,0,0,0.25);backdrop-filter:blur(8px);
+}
+.level-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:clamp(11px,2.5vw,14px);color:#fff}
+.level-row .coins{color:var(--coin-gold);font-weight:800}
+.xp-bar-outer{width:100%;height:6px;background:rgba(255,255,255,0.2);border-radius:3px;overflow:hidden;margin-top:2px}
+.xp-bar-inner{height:100%;background:linear-gradient(90deg,#FFD700,#FFA500);border-radius:3px;transition:width .4s}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+.stat-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.stat-item .icon{font-size:clamp(12px,3vw,16px)}
+.stat-item .bar-outer{width:100%;height:8px;background:rgba(255,255,255,0.2);border-radius:4px;overflow:hidden}
+.stat-item .bar-inner{height:100%;border-radius:4px;transition:width .3s}
+.stat-item .pct{font-size:clamp(9px,2vw,11px);color:rgba(255,255,255,0.85);font-weight:700}
+.bar-hunger{background:var(--bar-hunger)}.bar-happy{background:var(--bar-happy)}
+.bar-hygiene{background:var(--bar-hygiene)}.bar-energy{background:var(--bar-energy)}
+.bar-flash{animation:barFlash .5s infinite}
+@keyframes barFlash{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ═══════════════════════════════════════
+   ÁREA CENTRAL DO POU
+   ═══════════════════════════════════════ */
+#pou-area{
+  position:absolute;top:0;left:0;right:0;bottom:70px;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#pou-container{position:relative;transform-origin:center bottom}
+#pou-svg{transition:filter .5s}
+.pou-breathing{animation:breathe 2.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scaleY(1) scaleX(1)}50%{transform:scaleY(1.03) scaleX(1.02)}}
+.pou-happy{animation:pouJump .5s ease}
+@keyframes pouJump{0%,100%{transform:translateY(0)}40%{transform:translateY(-25px)}}
+.pou-sad{animation:pouSad 1.5s ease-in-out infinite}
+@keyframes pouSad{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+.pou-sleeping #pou-svg{filter:brightness(0.7)}
+
+/* Efeitos ao redor do Pou */
+.stink-cloud{
+  position:absolute;width:30px;height:20px;background:rgba(100,160,80,0.5);
+  border-radius:50%;filter:blur(4px);
+  animation:stinkFloat 2s ease-in-out infinite alternate;
+}
+@keyframes stinkFloat{0%{transform:translateY(0) scale(1);opacity:.6}100%{transform:translateY(-20px) scale(1.3);opacity:0}}
+.zzz{
+  position:absolute;color:rgba(255,255,255,0.8);font-size:20px;font-weight:900;
+  animation:zzzFloat 2s ease-in-out infinite;
+}
+@keyframes zzzFloat{0%{transform:translateY(0) scale(.8);opacity:0}30%{opacity:1}100%{transform:translateY(-60px) scale(1.3);opacity:0}}
+.tear{
+  position:absolute;width:6px;height:10px;background:rgba(100,180,255,0.8);
+  border-radius:0 0 50% 50%;animation:tearDrop 1s ease-in infinite;
+}
+@keyframes tearDrop{0%{transform:translateY(0);opacity:1}100%{transform:translateY(40px);opacity:0}}
+#hat-display{position:absolute;top:-40px;left:50%;transform:translateX(-50%);font-size:36px;z-index:5}
+
+/* Partículas */
+.particle{
+  position:absolute;width:8px;height:8px;border-radius:50%;
+  pointer-events:none;animation:particleBurst .8s ease-out forwards;
+}
+@keyframes particleBurst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--px),var(--py)) scale(0);opacity:0}}
+.confetti{
+  position:absolute;width:8px;height:12px;
+  animation:confettiFall 2s ease-in forwards;
+}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(600px) rotate(720deg);opacity:0}}
+.coin-fly{
+  position:absolute;font-size:16px;
+  animation:coinFly .7s ease-in forwards;
+}
+@keyframes coinFly{0%{opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(.3);opacity:0}}
+.levelup-text{
+  position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);
+  font-size:clamp(28px,8vw,42px);font-weight:900;color:#FFD700;
+  text-shadow:0 0 20px rgba(255,215,0,.6),0 2px 4px rgba(0,0,0,.5);
+  animation:levelUpAnim 1.5s ease-out forwards;z-index:99;
+}
+@keyframes levelUpAnim{0%{transform:translate(-50%,-50%) scale(0);opacity:0}30%{transform:translate(-50%,-50%) scale(1.3);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:0}}
+.food-fly{
+  position:absolute;font-size:28px;
+  animation:foodFlyAnim .6s ease-in forwards;z-index:60;
+}
+@keyframes foodFlyAnim{0%{transform:translate(0,60px) scale(1.2);opacity:1}100%{transform:translate(0,0) scale(.5);opacity:0}}
+
+/* ═══════════════════════════════════════
+   MENU INFERIOR
+   ═══════════════════════════════════════ */
+#bottom-menu{
+  position:absolute;bottom:0;left:0;right:0;height:70px;
+  display:flex;justify-content:space-around;align-items:center;
+  background:rgba(0,0,0,0.35);backdrop-filter:blur(10px);
+  border-top:1px solid rgba(255,255,255,0.1);z-index:50;
+}
+.menu-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;color:#fff;cursor:pointer;
+  font-family:inherit;font-size:clamp(9px,2.2vw,12px);font-weight:700;
+  padding:6px 10px;border-radius:12px;transition:all .2s;
+  min-height:44px;min-width:44px;justify-content:center;
+}
+.menu-btn:active,.menu-btn:hover{background:rgba(255,255,255,0.15);transform:scale(1.05)}
+.menu-btn .emoji{font-size:clamp(20px,5vw,26px)}
+
+/* ═══════════════════════════════════════
+   PAINÉIS / OVERLAYS
+   ═══════════════════════════════════════ */
+.panel{
+  position:absolute;top:0;left:0;right:0;bottom:0;z-index:80;
+  display:none;flex-direction:column;
+  background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);
+  animation:panelIn .3s ease;
+}
+.panel.active{display:flex}
+@keyframes panelIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.panel-header h2{color:#fff;font-size:clamp(16px,4vw,22px);font-weight:800}
+.panel-close{
+  background:rgba(255,255,255,0.15);border:none;color:#fff;
+  width:36px;height:36px;border-radius:50%;font-size:18px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.panel-close:hover{background:rgba(255,255,255,0.3)}
+.panel-body{flex:1;overflow-y:auto;padding:16px 20px}
+
+/* Grid de alimentos */
+.food-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.food-card{
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px;padding:12px 8px;text-align:center;cursor:pointer;
+  transition:all .2s;min-height:44px;
+}
+.food-card:hover,.food-card:active{background:rgba(255,255,255,0.18);transform:scale(1.04)}
+.food-card.disabled{opacity:.4;pointer-events:none}
+.food-card .food-emoji{font-size:clamp(24px,6vw,32px)}
+.food-card .food-name{color:#fff;font-size:clamp(10px,2.3vw,13px);font-weight:700;margin:4px 0}
+.food-card .food-info{color:rgba(255,255,255,0.6);font-size:clamp(8px,2vw,10px)}
+.food-card .food-price{color:var(--coin-gold);font-size:clamp(9px,2.2vw,11px);font-weight:700;margin-top:4px}
+
+/* Minijogos */
+.minigame-select{display:flex;flex-direction:column;gap:12px}
+.minigame-card{
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px;padding:16px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:14px;
+}
+.minigame-card:hover{background:rgba(255,255,255,0.15);transform:translateX(4px)}
+.minigame-card .mg-icon{font-size:32px}
+.minigame-card .mg-info h3{color:#fff;font-size:clamp(13px,3vw,16px);font-weight:700}
+.minigame-card .mg-info p{color:rgba(255,255,255,0.6);font-size:clamp(10px,2.3vw,12px);margin-top:2px}
+
+/* Área de minijogo ativa */
+#minigame-area{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;padding:16px;
+}
+.mg-hud{
+  display:flex;justify-content:space-between;width:100%;max-width:360px;
+  color:#fff;font-weight:700;font-size:14px;
+}
+/* Quebra-cabeça de cores */
+.color-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  width:min(280px,70vw);
+}
+.color-cell{
+  aspect-ratio:1;border-radius:12px;cursor:pointer;
+  transition:all .2s;border:2px solid rgba(255,255,255,0.2);
+}
+.color-cell:hover{transform:scale(1.08)}
+.color-cell.removing{animation:cellRemove .3s ease forwards}
+@keyframes cellRemove{to{transform:scale(0);opacity:0}}
+/* Pegar estrelas */
+#star-canvas{width:100%;max-width:360px;aspect-ratio:3/4;border-radius:16px;background:rgba(0,0,30,0.6)}
+/* Sequência de cores */
+.seq-colors{display:flex;gap:12px;margin:12px 0}
+.seq-btn{
+  width:clamp(50px,14vw,70px);height:clamp(50px,14vw,70px);border-radius:16px;
+  border:3px solid rgba(255,255,255,0.3);cursor:pointer;
+  transition:all .15s;
+}
+.seq-btn:active,.seq-btn.flash{transform:scale(1.15);border-color:#fff;filter:brightness(1.4)}
+
+/* Banho */
+#bath-area{
+  position:absolute;top:0;left:0;right:0;bottom:0;z-index:80;
+  display:none;background:linear-gradient(180deg,#1a6fa0,#2196F3,#64B5F6);
+  cursor:none;
+}
+#bath-area.active{display:block}
+.bubble{
+  position:absolute;width:var(--size);height:var(--size);
+  border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.6),rgba(255,255,255,0.1));
+  border:1px solid rgba(255,255,255,0.3);
+  animation:bubbleRise var(--dur) ease-in infinite;
+  animation-delay:var(--delay);
+}
+@keyframes bubbleRise{0%{transform:translateY(0) scale(1);opacity:.7}100%{transform:translateY(-400px) scale(1.5);opacity:0}}
+#sponge{
+  position:absolute;width:50px;height:40px;background:#FFD700;border-radius:8px;
+  pointer-events:none;z-index:90;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.bath-progress{
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.4);border-radius:20px;padding:8px 20px;
+  color:#fff;font-weight:800;font-size:14px;z-index:91;
+}
+.bath-close{
+  position:absolute;top:16px;right:16px;z-index:91;
+  background:rgba(0,0,0,0.4);border:none;color:#fff;
+  width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;
+}
+
+/* Dormir */
+#sleep-overlay{
+  position:absolute;top:0;left:0;right:0;bottom:0;z-index:75;
+  display:none;
+  background:linear-gradient(180deg,#0a0a1a,#1a1a3e);
+  flex-direction:column;align-items:center;justify-content:center;
+}
+#sleep-overlay.active{display:flex}
+.star{
+  position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;
+  animation:twinkle 2s ease-in-out infinite alternate;
+}
+@keyframes twinkle{0%{opacity:.3}100%{opacity:1}}
+#wake-btn{
+  position:absolute;bottom:100px;
+  background:var(--ui-coral);color:#fff;border:none;
+  padding:14px 32px;border-radius:24px;font-family:inherit;
+  font-size:16px;font-weight:800;cursor:pointer;
+  transition:all .2s;z-index:76;
+}
+#wake-btn:hover{transform:scale(1.05);background:#ff5252}
+
+/* Loja */
+.shop-tabs{display:flex;gap:8px;margin-bottom:16px}
+.shop-tab{
+  flex:1;padding:10px;border-radius:12px;border:none;
+  background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);
+  font-family:inherit;font-size:clamp(11px,2.5vw,13px);font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+.shop-tab.active{background:var(--ui-coral);color:#fff}
+.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.shop-item{
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;
+  transition:all .2s;position:relative;
+}
+.shop-item:hover{background:rgba(255,255,255,0.12)}
+.shop-item.owned{border-color:var(--ui-turquoise)}
+.shop-item.equipped{border-color:var(--coin-gold);box-shadow:0 0 12px rgba(255,215,0,0.3)}
+.shop-item.locked{opacity:.4}
+.shop-item .item-emoji{font-size:28px}
+.shop-item .item-name{color:#fff;font-size:clamp(10px,2.3vw,12px);font-weight:700;margin:6px 0 2px}
+.shop-item .item-price{color:var(--coin-gold);font-size:clamp(9px,2vw,11px);font-weight:700}
+.shop-item .item-lock{color:rgba(255,255,255,0.4);font-size:clamp(8px,1.8vw,10px)}
+.shop-item .item-badge{
+  position:absolute;top:6px;right:6px;font-size:8px;padding:2px 6px;
+  border-radius:6px;font-weight:800;
+}
+.badge-owned{background:var(--ui-turquoise);color:#000}
+.badge-equipped{background:var(--coin-gold);color:#000}
+
+/* Mute */
+#mute-btn{
+  position:absolute;top:8px;right:12px;z-index:55;
+  background:rgba(0,0,0,0.3);border:none;color:#fff;
+  width:32px;height:32px;border-radius:50%;font-size:14px;
+  cursor:pointer;backdrop-filter:blur(4px);
+}
+
+/* Mensagens rápidas */
+.toast{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(0,0,0,0.7);color:#fff;padding:10px 24px;
+  border-radius:20px;font-weight:700;font-size:14px;z-index:100;
+  animation:toastAnim 1.5s ease forwards;pointer-events:none;
+}
+@keyframes toastAnim{0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}20%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%)}}
+
+/* Fundo customizável */
+.bg-beach{background:linear-gradient(180deg,#87CEEB,#F4E4B0,#DEB887)!important}
+.bg-forest{background:linear-gradient(180deg,#2d5a27,#4a7c42,#8fbc8f)!important}
+.bg-space{background:linear-gradient(180deg,#0b0b2e,#1a0a3e,#2d1b69)!important}
+.bg-neon{background:linear-gradient(180deg,#0f0c29,#302b63,#24243e)!important}
+</style>
+</head>
+<body>
+
+<div id="game">
+  <!-- Botão mute -->
+  <button id="mute-btn" onclick="Audio.toggleMute()">🔊</button>
+
+  <!-- Barra de status superior -->
+  <div id="top-bar">
+    <div class="level-row">
+      <span id="level-display">Nv. 1 — Pou</span>
+      <span class="coins" id="coins-display">🪙 50</span>
+    </div>
+    <div class="xp-bar-outer"><div class="xp-bar-inner" id="xp-bar" style="width:0%"></div></div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="icon">🍔</span>
+        <div class="bar-outer"><div class="bar-inner bar-hunger" id="bar-hunger" style="width:80%"></div></div>
+        <span class="pct" id="pct-hunger">80%</span>
+      </div>
+      <div class="stat-item">
+        <span class="icon">⭐</span>
+        <div class="bar-outer"><div class="bar-inner bar-happy" id="bar-happy" style="width:80%"></div></div>
+        <span class="pct" id="pct-happy">80%</span>
+      </div>
+      <div class="stat-item">
+        <span class="icon">🚿</span>
+        <div class="bar-outer"><div class="bar-inner bar-hygiene" id="bar-hygiene" style="width:80%"></div></div>
+        <span class="pct" id="pct-hygiene">80%</span>
+      </div>
+      <div class="stat-item">
+        <span class="icon">⚡</span>
+        <div class="bar-outer"><div class="bar-inner bar-energy" id="bar-energy" style="width:80%"></div></div>
+        <span class="pct" id="pct-energy">80%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área do Pou -->
+  <div id="pou-area">
+    <div id="pou-container">
+      <div id="hat-display"></div>
+      <svg id="pou-svg" class="pou-breathing" width="150" height="200" viewBox="0 0 150 200">
+        <!-- Pernas -->
+        <ellipse cx="50" cy="185" rx="16" ry="12" fill="#7a3b10"/>
+        <ellipse cx="100" cy="185" rx="16" ry="12" fill="#7a3b10"/>
+        <!-- Braços -->
+        <ellipse cx="18" cy="130" rx="14" ry="10" fill="#7a3b10" transform="rotate(-20,18,130)"/>
+        <ellipse cx="132" cy="130" rx="14" ry="10" fill="#7a3b10" transform="rotate(20,132,130)"/>
+        <!-- Corpo -->
+        <ellipse cx="75" cy="120" rx="58" ry="72" fill="var(--pou-body)"/>
+        <ellipse cx="75" cy="125" rx="52" ry="64" fill="var(--pou-highlight)" opacity="0.15"/>
+        <!-- Antena -->
+        <line x1="75" y1="50" x2="75" y2="30" stroke="#6B3410" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="75" cy="26" r="5" fill="#6B3410"/>
+        <!-- Orelhas -->
+        <ellipse cx="22" cy="90" rx="10" ry="14" fill="#7a3b10"/>
+        <ellipse cx="128" cy="90" rx="10" ry="14" fill="#7a3b10"/>
+        <!-- Olhos -->
+        <g id="pou-eyes">
+          <ellipse cx="55" cy="105" rx="14" ry="16" fill="#1a1a1a"/>
+          <ellipse cx="95" cy="105" rx="14" ry="16" fill="#1a1a1a"/>
+          <circle cx="59" cy="99" r="5" fill="#fff" opacity="0.8"/>
+          <circle cx="99" cy="99" r="5" fill="#fff" opacity="0.8"/>
+          <!-- Pálpebras para dormir/sonolento -->
+          <rect id="eyelid-l" x="39" y="87" width="32" height="0" fill="var(--pou-body)" rx="2"/>
+          <rect id="eyelid-r" x="79" y="87" width="32" height="0" fill="var(--pou-body)" rx="2"/>
+        </g>
+        <!-- Boca -->
+        <path id="pou-mouth" d="M60 140 Q75 155 90 140" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Menu inferior -->
+  <div id="bottom-menu">
+    <button class="menu-btn" onclick="UI.openPanel('feed')"><span class="emoji">🍔</span>Alimentar</button>
+    <button class="menu-btn" onclick="UI.openPanel('play')"><span class="emoji">🎮</span>Brincar</button>
+    <button class="menu-btn" onclick="Bath.start()"><span class="emoji">🛁</span>Banho</button>
+    <button class="menu-btn" onclick="Sleep.start()"><span class="emoji">😴</span>Dormir</button>
+    <button class="menu-btn" onclick="UI.openPanel('shop')"><span class="emoji">🏪</span>Loja</button>
+  </div>
+
+  <!-- ═══ PAINEL ALIMENTAR ═══ -->
+  <div class="panel" id="panel-feed">
+    <div class="panel-header"><h2>🍔 Alimentar</h2><button class="panel-close" onclick="UI.closePanel('feed')">✕</button></div>
+    <div class="panel-body"><div class="food-grid" id="food-grid"></div></div>
+  </div>
+
+  <!-- ═══ PAINEL BRINCAR ═══ -->
+  <div class="panel" id="panel-play">
+    <div class="panel-header"><h2>🎮 Brincar</h2><button class="panel-close" onclick="UI.closePanel('play')">✕</button></div>
+    <div class="panel-body">
+      <div id="minigame-menu" class="minigame-select">
+        <div class="minigame-card" onclick="MiniGames.startColorPuzzle()">
+          <span class="mg-icon">🧩</span>
+          <div class="mg-info"><h3>Quebra-Cabeça de Cores</h3><p>Elimine grupos de blocos iguais!</p></div>
+        </div>
+        <div class="minigame-card" onclick="MiniGames.startStarCatch()">
+          <span class="mg-icon">⭐</span>
+          <div class="mg-info"><h3>Pegar Estrelas</h3><p>Pegue as estrelas que caem!</p></div>
+        </div>
+        <div class="minigame-card" onclick="MiniGames.startColorSeq()">
+          <span class="mg-icon">🎨</span>
+          <div class="mg-info"><h3>Sequência de Cores</h3><p>Repita a sequência mostrada!</p></div>
+        </div>
+      </div>
+      <div id="minigame-area" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAINEL LOJA ═══ -->
+  <div class="panel" id="panel-shop">
+    <div class="panel-header"><h2>🏪 Loja</h2><button class="panel-close" onclick="UI.closePanel('shop')">✕</button></div>
+    <div class="panel-body">
+      <div class="shop-tabs">
+        <button class="shop-tab active" onclick="Shop.setTab('hats',this)">🎩 Chapéus</button>
+        <button class="shop-tab" onclick="Shop.setTab('bgs',this)">🖼️ Fundos</button>
+        <button class="shop-tab" onclick="Shop.setTab('boosts',this)">⚡ Poderes</button>
+      </div>
+      <div class="shop-grid" id="shop-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ BANHO ═══ -->
+  <div id="bath-area">
+    <div class="bath-progress" id="bath-progress">🧽 Limpeza: 0%</div>
+    <button class="bath-close" onclick="Bath.end()">✕</button>
+    <div id="sponge">🧽</div>
+  </div>
+
+  <!-- ═══ DORMIR ═══ -->
+  <div id="sleep-overlay">
+    <button id="wake-btn" onclick="Sleep.wake()">☀️ Acordar</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   ESTADO DO JOGO (GameState)
+   ═══════════════════════════════════════ */
+const GS = {
+  nome:'Pou', nivel:1, xp:0, moedas:50,
+  fome:80, felicidade:80, higiene:80, energia:80,
+  ultimoSalvo:Date.now(),
+  itensEquipados:{chapeu:null,fundo:'padrao'},
+  itensComprados:[],
+  isSleeping:false, isSick:false,
+  // Timers de boost
+  boostXP:0, boostFome:0, boostFeliz:0
+};
+
+/* ═══════════════════════════════════════
+   ARMAZENAMENTO (StorageManager)
+   ═══════════════════════════════════════ */
+const Storage = {
+  save(){
+    GS.ultimoSalvo = Date.now();
+    try{ localStorage.setItem('pou_save', JSON.stringify(GS)); }catch(e){}
+  },
+  load(){
+    try{
+      const d = JSON.parse(localStorage.getItem('pou_save'));
+      if(!d) return;
+      Object.assign(GS, d);
+      // Cálculo offline
+      const elapsed = Math.min((Date.now()-GS.ultimoSalvo)/1000, 8*3600);
+      GS.fome = Math.max(0, GS.fome - elapsed/30);
+      GS.felicidade = Math.max(0, GS.felicidade - elapsed/45);
+      GS.higiene = Math.max(0, GS.higiene - elapsed/60);
+      GS.energia = Math.max(0, GS.energia - elapsed/50);
+    }catch(e){}
+  }
+};
+
+/* ═══════════════════════════════════════
+   ÁUDIO (AudioManager)
+   ═══════════════════════════════════════ */
+let audioCtx;
+const Audio = {
+  muted:false,
+  init(){ try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){} },
+  toggleMute(){
+    this.muted=!this.muted;
+    document.getElementById('mute-btn').textContent=this.muted?'🔇':'🔊';
+  },
+  play(type){
+    if(this.muted||!audioCtx) return;
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const now=audioCtx.currentTime;
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.12,now);
+    if(type==='eat'){
+      o.type='sine';o.frequency.setValueAtTime(520,now);
+      o.frequency.exponentialRampToValueAtTime(320,now+0.2);
+      g.gain.exponentialRampToValueAtTime(.001,now+0.3);o.start(now);o.stop(now+0.3);
+    }else if(type==='levelup'){
+      o.type='square';o.frequency.setValueAtTime(440,now);
+      o.frequency.setValueAtTime(554,now+0.15);o.frequency.setValueAtTime(659,now+0.3);
+      g.gain.exponentialRampToValueAtTime(.001,now+0.6);o.start(now);o.stop(now+0.6);
+    }else if(type==='buy'){
+      o.type='sine';o.frequency.setValueAtTime(800,now);
+      g.gain.exponentialRampToValueAtTime(.001,now+0.15);o.start(now);o.stop(now+0.15);
+    }else if(type==='happy'){
+      o.type='triangle';o.frequency.setValueAtTime(600,now);
+      o.frequency.setValueAtTime(800,now+0.1);
+      g.gain.exponentialRampToValueAtTime(.001,now+0.25);o.start(now);o.stop(now+0.25);
+    }else if(type==='water'){
+      // Ruído branco para banho
+      const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.3,audioCtx.sampleRate);
+      const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+      const n=audioCtx.createBufferSource();n.buffer=buf;
+      const f=audioCtx.createBiquadFilter();f.type='lowpass';f.frequency.value=1200;
+      n.connect(f);f.connect(g);g.gain.setValueAtTime(0.06,now);
+      g.gain.exponentialRampToValueAtTime(.001,now+0.3);n.start(now);n.stop(now+0.3);
+      return;
+    }
+  }
+};
+
+/* ═══════════════════════════════════════
+   INTERFACE / RENDERIZAÇÃO (UI / Renderer)
+   ═══════════════════════════════════════ */
+const UI = {
+  openPanel(id){
+    document.getElementById('panel-'+id).classList.add('active');
+    if(id==='feed') this.renderFoodGrid();
+    if(id==='shop') Shop.render();
+  },
+  closePanel(id){ document.getElementById('panel-'+id).classList.remove('active'); },
+
+  renderFoodGrid(){
+    const foods=[
+      {name:'Hambúrguer',icon:'🍔',hunger:30,happy:10,price:5},
+      {name:'Pizza',icon:'🍕',hunger:40,happy:20,price:10},
+      {name:'Sorvete',icon:'🍦',hunger:15,happy:35,price:8},
+      {name:'Salada',icon:'🥗',hunger:20,happy:5,price:3},
+      {name:'Bolo',icon:'🎂',hunger:25,happy:30,price:12},
+      {name:'Maçã',icon:'🍎',hunger:10,happy:10,price:2},
+      {name:'Sushi',icon:'🍣',hunger:35,happy:25,price:15},
+      {name:'Chocolate',icon:'🍫',hunger:20,happy:40,price:8},
+      {name:'Vitamina',icon:'💊',hunger:5,happy:5,price:20,cure:true},
+    ];
+    const g=document.getElementById('food-grid');
+    g.innerHTML=foods.map((f,i)=>{
+      const dis=GS.moedas<f.price?'disabled':'';
+      return `<div class="food-card ${dis}" onclick="Feed.give(${i})">
+        <div class="food-emoji">${f.icon}</div>
+        <div class="food-name">${f.name}</div>
+        <div class="food-info">🍔+${f.hunger} ⭐+${f.happy}</div>
+        <div class="food-price">🪙 ${f.price}</div>
+      </div>`;
+    }).join('');
+  },
+
+  updateBars(){
+    const attrs=[
+      {key:'hunger',val:GS.fome},{key:'happy',val:GS.felicidade},
+      {key:'hygiene',val:GS.higiene},{key:'energy',val:GS.energia}
+    ];
+    attrs.forEach(a=>{
+      const v=Math.max(0,Math.min(100,Math.round(a.val)));
+      document.getElementById('bar-'+a.key).style.width=v+'%';
+      document.getElementById('pct-'+a.key).textContent=v+'%';
+      // Flash para valores baixos
+      const bar=document.getElementById('bar-'+a.key);
+      if(v<=10) bar.classList.add('bar-flash');
+      else bar.classList.remove('bar-flash');
+    });
+    // Nível e XP
+    const lvl=Math.min(50,Math.floor(GS.xp/100)+1);
+    GS.nivel=lvl;
+    document.getElementById('level-display').textContent=`Nv. ${lvl} — ${GS.nome}`;
+    const xpInLvl=GS.xp%100;
+    document.getElementById('xp-bar').style.width=xpInLvl+'%';
+    document.getElementById('coins-display').textContent='🪙 '+Math.floor(GS.moedas);
+  },
+
+  updatePouExpression(){
+    const mouth=document.getElementById('pou-mouth');
+    const eyelidL=document.getElementById('eyelid-l');
+    const eyelidR=document.getElementById('eyelid-r');
+    const svg=document.getElementById('pou-svg');
+    const container=document.getElementById('pou-container');
+
+    // Limpar classes de animação
+    svg.classList.remove('pou-sad');
+    container.classList.remove('pou-sleeping');
+
+    if(GS.isSleeping){
+      // Dormindo
+      mouth.setAttribute('d','M60 142 Q75 142 90 142');
+      eyelidL.setAttribute('height','32');eyelidR.setAttribute('height','32');
+      container.classList.add('pou-sleeping');
+    }else if(GS.energia<=20){
+      // Sonolento
+      eyelidL.setAttribute('height','16');eyelidR.setAttribute('height','16');
+      mouth.setAttribute('d','M60 142 Q75 148 90 142');
+    }else if(GS.fome<=20||GS.isSick){
+      // Triste/doente
+      mouth.setAttribute('d','M60 148 Q75 138 90 148');
+      eyelidL.setAttribute('height','0');eyelidR.setAttribute('height','0');
+      svg.classList.add('pou-sad');
+    }else if(GS.felicidade<=30){
+      // Triste
+      mouth.setAttribute('d','M60 148 Q75 138 90 148');
+      eyelidL.setAttribute('height','0');eyelidR.setAttribute('height','0');
+    }else{
+      // Feliz
+      mouth.setAttribute('d','M60 140 Q75 155 90 140');
+      eyelidL.setAttribute('height','0');eyelidR.setAttribute('height','0');
+    }
+
+    // Cor verde quando sujo
+    const body=document.querySelector('#pou-svg ellipse:nth-child(5)');
+    if(GS.higiene<20) body.setAttribute('fill','#6b7a5a');
+    else body.setAttribute('fill','var(--pou-body)');
+
+    // Tamanho baseado no nível
+    const scale=1+(GS.nivel-1)*0.012;
+    document.getElementById('pou-container').style.transform=`scale(${scale})`;
+  },
+
+  updateBackground(){
+    const h=new Date().getHours();
+    const game=document.getElementById('game');
+    // Remover classes de fundo custom
+    if(GS.itensEquipados.fundo!=='padrao'){
+      game.className='bg-'+GS.itensEquipados.fundo;
+    }else{
+      game.className='';
+      if(h>=6&&h<18){
+        game.style.background='linear-gradient(180deg,var(--bg-day-top),var(--bg-day-bot))';
+      }else{
+        game.style.background='linear-gradient(180deg,var(--bg-night-top),var(--bg-night-bot))';
+      }
+    }
+  },
+
+  showEffects(){
+    const area=document.getElementById('pou-area');
+    // Limpar efeitos antigos
+    area.querySelectorAll('.stink-cloud,.tear').forEach(e=>e.remove());
+
+    // Nuvens de mau cheiro
+    if(GS.higiene<40&&!GS.isSleeping){
+      for(let i=0;i<3;i++){
+        const c=document.createElement('div');c.className='stink-cloud';
+        c.style.left=(30+Math.random()*60)+'%';
+        c.style.top=(30+Math.random()*30)+'%';
+        c.style.animationDelay=(i*0.6)+'s';
+        area.appendChild(c);
+      }
+    }
+    // Lágrimas
+    if(GS.felicidade<30&&!GS.isSleeping){
+      for(let i=0;i<2;i++){
+        const t=document.createElement('div');t.className='tear';
+        const rect=document.getElementById('pou-container').getBoundingClientRect();
+        const areaRect=area.getBoundingClientRect();
+        t.style.left=((rect.left-areaRect.left)+(i===0?38:82)*((rect.width)/150))+'px';
+        t.style.top=((rect.top-areaRect.top)+110*((rect.height)/200))+'px';
+        t.style.animationDelay=(i*0.4)+'s';
+        area.appendChild(t);
+      }
+    }
+  },
+
+  toast(msg){
+    const t=document.createElement('div');t.className='toast';t.textContent=msg;
+    document.getElementById('game').appendChild(t);
+    setTimeout(()=>t.remove(),1600);
+  },
+
+  spawnParticles(x,y,color,count=8){
+    const area=document.getElementById('pou-area');
+    for(let i=0;i<count;i++){
+      const p=document.createElement('div');p.className='particle';
+      p.style.left=x+'px';p.style.top=y+'px';
+      p.style.background=color||`hsl(${Math.random()*360},80%,60%)`;
+      p.style.setProperty('--px',(Math.random()*80-40)+'px');
+      p.style.setProperty('--py',(Math.random()*-60-20)+'px');
+      area.appendChild(p);
+      setTimeout(()=>p.remove(),800);
+    }
+  },
+
+  spawnConfetti(){
+    const area=document.getElementById('pou-area');
+    for(let i=0;i<30;i++){
+      const c=document.createElement('div');c.className='confetti';
+      c.style.left=Math.random()*100+'%';
+      c.style.top='-10px';
+      c.style.background=`hsl(${Math.random()*360},90%,60%)`;
+      c.style.animationDelay=(Math.random()*0.5)+'s';
+      c.style.borderRadius=Math.random()>.5?'50%':'2px';
+      area.appendChild(c);
+      setTimeout(()=>c.remove(),2500);
+    }
+  },
+
+  showLevelUp(){
+    const t=document.createElement('div');t.className='levelup-text';
+    t.textContent='⭐ LEVEL UP! ⭐';
+    document.getElementById('game').appendChild(t);
+    Audio.play('levelup');
+    this.spawnConfetti();
+    setTimeout(()=>t.remove(),1600);
+  },
+
+  coinFlyEffect(){
+    const coin=document.createElement('div');coin.className='coin-fly';
+    coin.textContent='🪙';
+    coin.style.left='50%';coin.style.top='50%';
+    coin.style.setProperty('--tx','0px');coin.style.setProperty('--ty','-200px');
+    document.getElementById('game').appendChild(coin);
+    setTimeout(()=>coin.remove(),700);
+  }
+};
+
+/* ═══════════════════════════════════════
+   ALIMENTAÇÃO (Feed)
+   ═══════════════════════════════════════ */
+const foods=[
+  {name:'Hambúrguer',icon:'🍔',hunger:30,happy:10,price:5},
+  {name:'Pizza',icon:'🍕',hunger:40,happy:20,price:10},
+  {name:'Sorvete',icon:'🍦',hunger:15,happy:35,price:8},
+  {name:'Salada',icon:'🥗',hunger:20,happy:5,price:3},
+  {name:'Bolo',icon:'🎂',hunger:25,happy:30,price:12},
+  {name:'Maçã',icon:'🍎',hunger:10,happy:10,price:2},
+  {name:'Sushi',icon:'🍣',hunger:35,happy:25,price:15},
+  {name:'Chocolate',icon:'🍫',hunger:20,happy:40,price:8},
+  {name:'Vitamina',icon:'💊',hunger:5,happy:5,price:20,cure:true},
+];
+
+const Feed = {
+  give(idx){
+    const f=foods[idx];
+    if(GS.moedas<f.price) return;
+    GS.moedas-=f.price;
+    GS.fome=Math.min(100,GS.fome+f.hunger);
+    GS.felicidade=Math.min(100,GS.felicidade+f.happy);
+    if(f.cure) GS.isSick=false;
+    addXP(10);
+    Audio.play('eat');
+    // Animação do alimento voando
+    const fly=document.createElement('div');fly.className='food-fly';
+    fly.textContent=f.icon;fly.style.left='50%';fly.style.top='60%';
+    document.getElementById('game').appendChild(fly);
+    setTimeout(()=>fly.remove(),600);
+    // Partículas
+    setTimeout(()=>UI.spawnParticles(270,350,null,10),400);
+    // Animação de mastigar
+    animateChew();
+    UI.renderFoodGrid();
+    UI.updateBars();
+    UI.coinFlyEffect();
+  }
+};
+
+function animateChew(){
+  const mouth=document.getElementById('pou-mouth');
+  let c=0;
+  const iv=setInterval(()=>{
+    mouth.setAttribute('d', c%2===0?'M60 140 Q75 130 90 140':'M60 140 Q75 155 90 140');
+    c++;if(c>=6)clearInterval(iv);
+  },150);
+}
+
+/* ═══════════════════════════════════════
+   MINIJOGOS (MiniGames)
+   ═══════════════════════════════════════ */
+const MiniGames = {
+  active:null,
+
+  endGame(){
+    this.active=null;
+    document.getElementById('minigame-area').style.display='none';
+    document.getElementById('minigame-menu').style.display='flex';
+    UI.spawnConfetti();
+  },
+
+  /* --- JOGO 1: QUEBRA-CABEÇA DE CORES --- */
+  startColorPuzzle(){
+    this.active='color';
+    document.getElementById('minigame-menu').style.display='none';
+    const area=document.getElementById('minigame-area');
+    area.style.display='flex';
+    const colors=['#FF6B6B','#4ECDC4','#FFC107','#9C27B0','#4CAF50'];
+    let grid=[];for(let i=0;i<16;i++) grid.push(colors[Math.floor(Math.random()*colors.length)]);
+    let score=0, moves=20;
+
+    const render=()=>{
+      area.innerHTML=`
+        <div class="mg-hud"><span>Pontos: ${score}</span><span>Jogadas: ${moves}</span></div>
+        <div class="color-grid">${grid.map((c,i)=>
+          c?`<div class="color-cell" style="background:${c}" data-i="${i}"></div>`
+          :`<div class="color-cell" style="background:transparent;pointer-events:none" data-i="${i}"></div>`
+        ).join('')}</div>
+        <button style="margin-top:12px;padding:10px 24px;border-radius:12px;border:none;background:var(--ui-coral);color:#fff;font-family:inherit;font-weight:700;cursor:pointer" onclick="MiniGames.endGame()">Sair</button>
+      `;
+      area.querySelectorAll('.color-cell').forEach(el=>{
+        el.addEventListener('click',()=>{
+          const idx=+el.dataset.i;
+          if(!grid[idx]||moves<=0) return;
+          const target=grid[idx];
+          // BFS para encontrar grupo
+          const visited=new Set();
+          const queue=[idx];visited.add(idx);
+          while(queue.length){
+            const cur=queue.shift();
+            const r=Math.floor(cur/4),c2=cur%4;
+            [[r-1,c2],[r+1,c2],[r,c2-1],[r,c2+1]].forEach(([nr,nc])=>{
+              const ni=nr*4+nc;
+              if(nr>=0&&nr<4&&nc>=0&&nc<4&&!visited.has(ni)&&grid[ni]===target){
+                visited.add(ni);queue.push(ni);
+              }
+            });
+          }
+          if(visited.size<2) return;
+          moves--;score+=visited.size;
+          visited.forEach(i2=>grid[i2]=null);
+          // Gravidade
+          for(let c3=0;c3<4;c3++){
+            const col=[];
+            for(let r=0;r<4;r++) if(grid[r*4+c3]) col.push(grid[r*4+c3]);
+            while(col.length<4) col.unshift(null);
+            for(let r=0;r<4;r++) grid[r*4+c3]=col[r];
+          }
+          // Preencher vazios no topo
+          for(let i2=0;i2<16;i2++) if(!grid[i2]) grid[i2]=colors[Math.floor(Math.random()*colors.length)];
+          Audio.play('happy');
+          render();
+          if(moves<=0){
+            GS.felicidade=Math.min(100,GS.felicidade+20);
+            GS.moedas+=5;addXP(15);
+            UI.toast(`+${score} pontos! +20⭐ +5🪙`);
+            setTimeout(()=>this.endGame(),1200);
+          }
+        });
+      });
+    };
+    render();
+  },
+
+  /* --- JOGO 2: PEGAR ESTRELAS --- */
+  startStarCatch(){
+    this.active='star';
+    document.getElementById('minigame-menu').style.display='none';
+    const area=document.getElementById('minigame-area');
+    area.style.display='flex';
+    let score=0,timeLeft=30;
+    area.innerHTML=`
+      <div class="mg-hud"><span id="sc-score">⭐ 0</span><span id="sc-time">⏱ 30s</span></div>
+      <canvas id="star-canvas" width="360" height="480"></canvas>
+      <button style="margin-top:8px;padding:10px 24px;border-radius:12px;border:none;background:var(--ui-coral);color:#fff;font-family:inherit;font-weight:700;cursor:pointer" onclick="MiniGames.endStarCatch()">Sair</button>
+    `;
+    const canvas=document.getElementById('star-canvas');
+    const ctx=canvas.getContext('2d');
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+    let stars=[];
+
+    const addStar=()=>{
+      stars.push({x:Math.random()*(canvas.width-30)+15,y:-20,speed:2+Math.random()*3,size:20+Math.random()*10});
+    };
+
+    const clickHandler=(e)=>{
+      const cRect=canvas.getBoundingClientRect();
+      const ex=(e.clientX||e.touches?.[0]?.clientX||0)-cRect.left;
+      const ey=(e.clientY||e.touches?.[0]?.clientY||0)-cRect.top;
+      const mx=ex*scaleX, my=ey*scaleY;
+      for(let i=stars.length-1;i>=0;i--){
+        const s=stars[i];
+        if(Math.hypot(mx-s.x,my-s.y)<s.size){
+          stars.splice(i,1);score++;
+          document.getElementById('sc-score').textContent='⭐ '+score;
+          Audio.play('happy');
+          break;
+        }
+      }
+    };
+    canvas.addEventListener('click',clickHandler);
+    canvas.addEventListener('touchstart',clickHandler,{passive:true});
+
+    let spawnT=0;
+    this._starInterval=setInterval(()=>{
+      timeLeft--;
+      document.getElementById('sc-time').textContent='⏱ '+timeLeft+'s';
+      if(timeLeft<=0) this.endStarCatch();
+    },1000);
+
+    const loop=()=>{
+      if(this.active!=='star') return;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      spawnT++;if(spawnT%20===0) addStar();
+      stars.forEach(s=>{
+        s.y+=s.speed;
+        ctx.font=s.size+'px serif';
+        ctx.fillText('⭐',s.x-s.size/2,s.y);
+      });
+      stars=stars.filter(s=>s.y<canvas.height+30);
+      requestAnimationFrame(loop);
+    };
+    loop();
+  },
+
+  endStarCatch(){
+    clearInterval(this._starInterval);
+    const area=document.getElementById('minigame-area');
+    const scoreEl=document.getElementById('sc-score');
+    const score=parseInt(scoreEl?.textContent?.replace(/\D/g,'')||'0');
+    GS.felicidade=Math.min(100,GS.felicidade+score);
+    GS.moedas+=score;addXP(15);
+    UI.toast(`+${score}⭐ +${score}🪙`);
+    setTimeout(()=>this.endGame(),800);
+  },
+
+  /* --- JOGO 3: SEQUÊNCIA DE CORES --- */
+  startColorSeq(){
+    this.active='seq';
+    document.getElementById('minigame-menu').style.display='none';
+    const area=document.getElementById('minigame-area');
+    area.style.display='flex';
+    const seqColors=['#FF6B6B','#4ECDC4','#FFC107','#9C27B0'];
+    let sequence=[],playerSeq=[],round=0,showing=false;
+
+    const nextRound=()=>{
+      round++;
+      sequence.push(Math.floor(Math.random()*4));
+      playerSeq=[];
+      showing=true;
+      render();
+      showSequence();
+    };
+
+    const showSequence=()=>{
+      let i=0;
+      const iv=setInterval(()=>{
+        const btns=area.querySelectorAll('.seq-btn');
+        btns.forEach(b=>b.classList.remove('flash'));
+        if(i<sequence.length){
+          btns[sequence[i]].classList.add('flash');
+          Audio.play('happy');
+          setTimeout(()=>btns[sequence[i]]?.classList.remove('flash'),400);
+          i++;
+        }else{
+          clearInterval(iv);showing=false;
+        }
+      },600);
+    };
+
+    const render=()=>{
+      area.innerHTML=`
+        <div class="mg-hud"><span>Rodada: ${round}</span><span>XP: +${round*10}</span></div>
+        <p style="color:#fff;font-size:14px;margin:8px 0">${showing?'Observe...':'Sua vez!'}</p>
+        <div class="seq-colors">
+          ${seqColors.map((c,i)=>`<div class="seq-btn" style="background:${c}" data-i="${i}"></div>`).join('')}
+        </div>
+        <button style="margin-top:12px;padding:10px 24px;border-radius:12px;border:none;background:var(--ui-coral);color:#fff;font-family:inherit;font-weight:700;cursor:pointer" onclick="MiniGames.endGame()">Sair</button>
+      `;
+      area.querySelectorAll('.seq-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          if(showing) return;
+          const idx=+btn.dataset.i;
+          btn.classList.add('flash');
+          Audio.play('buy');
+          setTimeout(()=>btn.classList.remove('flash'),200);
+          playerSeq.push(idx);
+          if(playerSeq[playerSeq.length-1]!==sequence[playerSeq.length-1]){
+            // Errou
+            GS.felicidade=Math.min(100,GS.felicidade+Math.min(round*3,30));
+            addXP(round*10);GS.moedas+=round*2;
+            UI.toast(`Rodada ${round}! +${round*10}XP`);
+            setTimeout(()=>this.endGame(),800);
+            return;
+          }
+          if(playerSeq.length===sequence.length){
+            addXP(10);
+            setTimeout(()=>nextRound(),600);
+          }
+        });
+      });
+    };
+    nextRound();
+  }
+};
+
+/* ═══════════════════════════════════════
+   BANHO (Bath)
+   ═══════════════════════════════════════ */
+const Bath = {
+  active:false, progress:0, lastX:0, lastY:0, scrubDist:0,
+
+  start(){
+    if(this.active) return;
+    this.active=true;this.progress=0;this.scrubDist=0;
+    const ba=document.getElementById('bath-area');
+    ba.classList.add('active');
+    // Gerar bolhas de fundo
+    for(let i=0;i<12;i++){
+      const b=document.createElement('div');b.className='bubble';
+      const sz=10+Math.random()*25;
+      b.style.setProperty('--size',sz+'px');
+      b.style.setProperty('--dur',(3+Math.random()*4)+'s');
+      b.style.setProperty('--delay',(Math.random()*3)+'s');
+      b.style.left=Math.random()*100+'%';
+      b.style.bottom=(-Math.random()*50)+'px';
+      ba.appendChild(b);
+    }
+    this.updateProgress();
+    // Eventos
+    const moveHandler=(e)=>{
+      e.preventDefault();
+      const x=e.clientX||e.touches?.[0]?.clientX||0;
+      const y=e.clientY||e.touches?.[0]?.clientY||0;
+      document.getElementById('sponge').style.left=(x-25)+'px';
+      document.getElementById('sponge').style.top=(y-20)+'px';
+      // Detectar esfregação sobre o Pou (centro da tela)
+      const gRect=document.getElementById('game').getBoundingClientRect();
+      const cx=gRect.left+gRect.width/2, cy=gRect.top+gRect.height*0.45;
+      if(Math.hypot(x-cx,y-cy)<100){
+        this.scrubDist+=Math.hypot(x-this.lastX,y-this.lastY);
+        if(this.scrubDist>60){
+          this.scrubDist=0;
+          this.progress=Math.min(100,this.progress+5);
+          this.updateProgress();
+          Audio.play('water');
+          if(this.progress>=100) this.complete();
+        }
+      }
+      this.lastX=x;this.lastY=y;
+    };
+    ba._moveH=moveHandler;
+    ba.addEventListener('mousemove',moveHandler);
+    ba.addEventListener('touchmove',moveHandler,{passive:false});
+  },
+
+  updateProgress(){
+    document.getElementById('bath-progress').textContent=`🧽 Limpeza: ${this.progress}%`;
+    // Atualizar higiene gradualmente
+    GS.higiene=Math.min(100,GS.higiene + (this.progress>=100?0:1));
+  },
+
+  complete(){
+    GS.higiene=100;GS.felicidade=Math.min(100,GS.felicidade+30);
+    addXP(10);
+    UI.toast('✨ Pou está limpinho! +30⭐');
+    setTimeout(()=>this.end(),800);
+  },
+
+  end(){
+    this.active=false;
+    const ba=document.getElementById('bath-area');
+    ba.classList.remove('active');
+    ba.querySelectorAll('.bubble').forEach(b=>b.remove());
+    if(ba._moveH){
+      ba.removeEventListener('mousemove',ba._moveH);
+      ba.removeEventListener('touchmove',ba._moveH);
+    }
+  }
+};
+
+/* ═══════════════════════════════════════
+   SONO (Sleep)
+   ═══════════════════════════════════════ */
+const Sleep = {
+  interval:null,
+
+  start(){
+    if(GS.isSleeping) return;
+    GS.isSleeping=true;
+    const ol=document.getElementById('sleep-overlay');
+    ol.classList.add('active');
+    // Estrelas no fundo
+    ol.querySelectorAll('.star,.zzz').forEach(e=>e.remove());
+    for(let i=0;i<30;i++){
+      const s=document.createElement('div');s.className='star';
+      s.style.left=Math.random()*100+'%';
+      s.style.top=Math.random()*60+'%';
+      s.style.animationDelay=(Math.random()*2)+'s';
+      s.style.width=(1+Math.random()*3)+'px';
+      s.style.height=s.style.width;
+      ol.appendChild(s);
+    }
+    // Zzz
+    this.zzzInterval=setInterval(()=>{
+      if(!GS.isSleeping) return;
+      const z=document.createElement('div');z.className='zzz';z.textContent='Z';
+      z.style.left=(45+Math.random()*15)+'%';
+      z.style.top='40%';z.style.fontSize=(16+Math.random()*14)+'px';
+      ol.appendChild(z);
+      setTimeout(()=>z.remove(),2000);
+    },800);
+
+    // Recuperação: +10 energia a cada 5 segundos
+    this.interval=setInterval(()=>{
+      GS.energia=Math.min(100,GS.energia+10);
+      UI.updateBars();
+      if(GS.energia>=100) this.wake();
+    },5000);
+  },
+
+  wake(){
+    GS.isSleeping=false;
+    clearInterval(this.interval);
+    clearInterval(this.zzzInterval);
+    document.getElementById('sleep-overlay').classList.remove('active');
+    GS.felicidade=Math.min(100,GS.felicidade+10);
+    UI.toast('☀️ Pou acordou revigorado!');
+    // Animação de pulo
+    document.getElementById('pou-svg').classList.add('pou-happy');
+    setTimeout(()=>document.getElementById('pou-svg').classList.remove('pou-happy'),600);
+    Audio.play('happy');
+  }
+};
+
+/* ═══════════════════════════════════════
+   LOJA (Shop)
+   ═══════════════════════════════════════ */
+const shopItems={
+  hats:[
+    {id:'bone',name:'Boné Vermelho',icon:'🧢',price:50,lvl:1},
+    {id:'coroa',name:'Coroa Dourada',icon:'👑',price:200,lvl:10},
+    {id:'bruxa',name:'Chapéu de Bruxa',icon:'🧙',price:150,lvl:5},
+    {id:'astro',name:'Capacete Astro',icon:'🪖',price:300,lvl:20},
+  ],
+  bgs:[
+    {id:'beach',name:'Praia Tropical',icon:'🏖️',price:100,lvl:1},
+    {id:'forest',name:'Floresta Mágica',icon:'🌲',price:150,lvl:1},
+    {id:'space',name:'Espaço Sideral',icon:'🚀',price:200,lvl:1},
+    {id:'neon',name:'Cidade Neon',icon:'🌃',price:250,lvl:1},
+  ],
+  boosts:[
+    {id:'bxp',name:'Dobro XP (5min)',icon:'✨',price:80,lvl:1,type:'boost'},
+    {id:'bfome',name:'Regen Fome (3min)',icon:'🍔',price:60,lvl:1,type:'boost'},
+    {id:'bfeliz',name:'Super Feliz (5min)',icon:'😄',price:100,lvl:1,type:'boost'},
+  ]
+};
+
+const Shop = {
+  currentTab:'hats',
+
+  setTab(tab,btn){
+    this.currentTab=tab;
+    document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    this.render();
+  },
+
+  render(){
+    const grid=document.getElementById('shop-grid');
+    const items=shopItems[this.currentTab];
+    grid.innerHTML=items.map(item=>{
+      const owned=GS.itensComprados.includes(item.id);
+      const equipped=(this.currentTab==='hats'&&GS.itensEquipados.chapeu===item.id)||
+                     (this.currentTab==='bgs'&&GS.itensEquipados.fundo===item.id);
+      const locked=GS.nivel<item.lvl;
+      let badge='';
+      if(equipped) badge='<span class="item-badge badge-equipped">EQUIPADO</span>';
+      else if(owned&&item.type!=='boost') badge='<span class="item-badge badge-owned">COMPRADO</span>';
+      return `<div class="shop-item ${locked?'locked':''} ${owned?'owned':''} ${equipped?'equipped':''}"
+        onclick="Shop.buy('${this.currentTab}','${item.id}')">
+        ${badge}
+        <div class="item-emoji">${item.icon}</div>
+        <div class="item-name">${item.name}</div>
+        ${locked?`<div class="item-lock">🔒 Nível ${item.lvl}</div>`
+          :(owned&&item.type!=='boost'?'<div class="item-price">Clique p/ equipar</div>'
+          :`<div class="item-price">🪙 ${item.price}</div>`)}
+      </div>`;
+    }).join('');
+  },
+
+  buy(cat,id){
+    const item=[...shopItems.hats,...shopItems.bgs,...shopItems.boosts].find(i=>i.id===id);
+    if(!item) return;
+    if(GS.nivel<item.lvl){UI.toast('🔒 Nível insuficiente!');return;}
+    const owned=GS.itensComprados.includes(id);
+
+    if(item.type==='boost'){
+      if(GS.moedas<item.price){UI.toast('Moedas insuficientes!');return;}
+      GS.moedas-=item.price;
+      Audio.play('buy');
+      if(id==='bxp'){GS.boostXP=Date.now()+300000;UI.toast('✨ Dobro de XP por 5min!');}
+      if(id==='bfome'){GS.boostFome=Date.now()+180000;UI.toast('🍔 Regen Fome por 3min!');}
+      if(id==='bfeliz'){GS.boostFeliz=Date.now()+300000;UI.toast('😄 Super Feliz por 5min!');}
+    }else if(owned){
+      // Equipar
+      if(cat==='hats') GS.itensEquipados.chapeu=(GS.itensEquipados.chapeu===id?null:id);
+      if(cat==='bgs') GS.itensEquipados.fundo=(GS.itensEquipados.fundo===id?'padrao':id);
+      Audio.play('buy');
+      UI.updateBackground();
+      updateHat();
+    }else{
+      if(GS.moedas<item.price){UI.toast('Moedas insuficientes!');return;}
+      GS.moedas-=item.price;
+      GS.itensComprados.push(id);
+      // Auto equip
+      if(cat==='hats') GS.itensEquipados.chapeu=id;
+      if(cat==='bgs'){GS.itensEquipados.fundo=id;UI.updateBackground();}
+      Audio.play('buy');
+      updateHat();
+    }
+    UI.updateBars();
+    this.render();
+  }
+};
+
+function updateHat(){
+  const hd=document.getElementById('hat-display');
+  const h=GS.itensEquipados.chapeu;
+  if(!h){hd.textContent='';return;}
+  const item=shopItems.hats.find(i=>i.id===h);
+  hd.textContent=item?item.icon:'';
+}
+
+/* ═══════════════════════════════════════
+   SISTEMA DE XP E NÍVEL
+   ═══════════════════════════════════════ */
+function addXP(amount){
+  const prevLvl=GS.nivel;
+  if(GS.boostXP>Date.now()) amount*=2;
+  GS.xp+=amount;
+  GS.nivel=Math.min(50,Math.floor(GS.xp/100)+1);
+  if(GS.nivel>prevLvl) UI.showLevelUp();
+  UI.updateBars();
+}
+
+/* ═══════════════════════════════════════
+   PISCADA AUTOMÁTICA
+   ═══════════════════════════════════════ */
+let blinkTimeout;
+function scheduleBlink(){
+  blinkTimeout=setTimeout(()=>{
+    if(!GS.isSleeping&&GS.energia>20){
+      const el=document.getElementById('eyelid-l');
+      const er=document.getElementById('eyelid-r');
+      el.setAttribute('height','32');er.setAttribute('height','32');
+      setTimeout(()=>{
+        el.setAttribute('height','0');er.setAttribute('height','0');
+        scheduleBlink();
+      },150);
+    }else{
+      scheduleBlink();
+    }
+  },3000+Math.random()*2000);
+}
+
+/* ═══════════════════════════════════════
+   LOOP PRINCIPAL DO JOGO
+   ═══════════════════════════════════════ */
+let tickCount=0;
+
+function gameTick(){
+  if(GS.isSleeping) return;
+  tickCount++;
+
+  // Decrementar atributos
+  if(tickCount%30===0) GS.fome=Math.max(0,GS.fome-1);
+  if(tickCount%45===0) GS.felicidade=Math.max(0,GS.felicidade-1);
+  if(tickCount%60===0) GS.higiene=Math.max(0,GS.higiene-1);
+  if(tickCount%50===0) GS.energia=Math.max(0,GS.energia-1);
+
+  // Boosts ativos
+  if(GS.boostFome>Date.now()&&tickCount%10===0) GS.fome=Math.min(100,GS.fome+1);
+  if(GS.boostFeliz>Date.now()) GS.felicidade=Math.min(100,GS.felicidade+0.1);
+
+  // Doença
+  if(GS.fome<=0&&!GS.isSick){
+    GS.isSick=true;
+    UI.toast('💊 Pou está doente!');
+  }
+  if(GS.isSick&&tickCount%10===0) GS.energia=Math.max(0,GS.energia-2);
+
+  // Sono automático
+  if(GS.energia<=0&&!GS.isSleeping) Sleep.start();
+
+  // Atualizar UI
+  UI.updateBars();
+  UI.updatePouExpression();
+
+  // Efeitos visuais a cada 3s
+  if(tickCount%3===0) UI.showEffects();
+
+  // Salvar a cada 30s
+  if(tickCount%30===0) Storage.save();
+}
+
+/* ═══════════════════════════════════════
+   INICIALIZAÇÃO
+   ═══════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',()=>{
+  Audio.init();
+  Storage.load();
+  UI.updateBars();
+  UI.updateBackground();
+  UI.updatePouExpression();
+  updateHat();
+  scheduleBlink();
+
+  // Se estava dormindo
+  if(GS.isSleeping){GS.isSleeping=false;Sleep.start();}
+
+  // Loop principal a cada 1 segundo
+  setInterval(gameTick,1000);
+
+  // Iniciar interação de toque no AudioContext
+  document.addEventListener('click',()=>{
+    if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+  },{once:true});
+
+  // Salvar ao fechar
+  window.addEventListener('beforeunload',()=>Storage.save());
+});
+</script>
+</body>
+</html>
